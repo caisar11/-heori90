@@ -1,0 +1,896 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#0E5E46">
+<meta name="description" content="40~50대 직장인 남성을 위한 뱃살 코치: 매일 식단, 무릎 친화 홈트, 음식 사진 AI 분석">
+<link rel="manifest" href="manifest.json">
+<link rel="icon" href="icon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="icon-192.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="허리90">
+<title>허리90 코치</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Hahmlet:wght@600;800&family=IBM+Plex+Sans+KR:wght@400;500;700&family=IBM+Plex+Mono:wght@500;600&display=swap">
+<style>
+/* Layout: 폰 우선 단일 컬럼 앱. 상단 허리둘레·칼로리 계기판 → 탭 → 카드형 작업 영역 */
+:root{
+  --bg:#F5F6F3; --surface:#FFFFFF; --ink:#111613; --muted:#5B6560; --line:#DDE2DD;
+  --accent:#0E5E46; --accent-ink:#FFFFFF; --accent-soft:#E3EFEA;
+  --good:#1D7A4E; --warn:#A8670E; --stop:#B83A26;
+  --good-bg:#E5F3EB; --warn-bg:#FBF0DD; --stop-bg:#FBE6E1;
+  --f-display:"Hahmlet","Noto Serif KR",Georgia,serif;
+  --f-body:"IBM Plex Sans KR","Apple SD Gothic Neo","Malgun Gothic",system-ui,sans-serif;
+  --f-data:"IBM Plex Mono",ui-monospace,Menlo,monospace;
+  --r:10px;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#0F1311; --surface:#171D1A; --ink:#EEF2EF; --muted:#9AA6A0; --line:#2A332E;
+  --accent:#4FC69A; --accent-ink:#06261A; --accent-soft:#183129;
+  --good:#5BD394; --warn:#E8AE52; --stop:#F07A64;
+  --good-bg:#16301F; --warn-bg:#33270F; --stop-bg:#3A1C16; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#0F1311; --surface:#171D1A; --ink:#EEF2EF; --muted:#9AA6A0; --line:#2A332E;
+  --accent:#4FC69A; --accent-ink:#06261A; --accent-soft:#183129;
+  --good:#5BD394; --warn:#E8AE52; --stop:#F07A64;
+  --good-bg:#16301F; --warn-bg:#33270F; --stop-bg:#3A1C16; color-scheme:dark}
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+img{max-width:100%}
+:root{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+body{background:var(--bg);color:var(--ink);font-family:var(--f-body);font-size:15px;line-height:1.6;margin:0}
+.wrap{max-width:760px;margin:0 auto;padding-inline:16px;padding-block:20px 48px}
+h1,h2,h3{font-family:var(--f-display);text-wrap:balance;margin:0;line-height:1.25}
+h1{font-size:28px;font-weight:800;letter-spacing:-.01em}
+h2{font-size:20px;font-weight:800}
+h3{font-size:16px;font-weight:600}
+p{margin:0}
+.num{font-family:var(--f-data);font-variant-numeric:tabular-nums}
+.eyebrow{font-size:12px;letter-spacing:.08em;color:var(--muted);font-weight:500}
+.muted{color:var(--muted)}
+small{font-size:13px}
+
+/* header */
+.top{display:flex;justify-content:space-between;align-items:flex-end;gap:12px;flex-wrap:wrap}
+.brand{display:flex;align-items:baseline;gap:10px}
+.brand .mark{font-family:var(--f-data);font-size:13px;padding:2px 8px;border:1.5px solid var(--ink);border-radius:999px}
+.gauge{margin-top:18px;background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:18px;display:grid;grid-template-columns:auto 1fr;gap:20px;align-items:center}
+.ring{width:118px;height:118px;position:relative}
+.ring svg{display:block}
+.ring .center{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center}
+.ring .center b{font-family:var(--f-data);font-size:24px;line-height:1}
+.ring .center span{font-size:11px;color:var(--muted)}
+.bars{display:grid;gap:10px;min-width:0}
+.bar-row{display:grid;grid-template-columns:52px 1fr auto;gap:10px;align-items:center;font-size:13px}
+.track{height:8px;background:var(--accent-soft);border-radius:99px;overflow:hidden}
+.fill{height:100%;background:var(--accent);border-radius:99px;transition:width .4s}
+.fill.over{background:var(--stop)}
+
+/* tabs */
+.tabs{position:sticky;top:env(safe-area-inset-top,0px);z-index:5;background:var(--bg);margin-top:18px;padding-block:8px;display:flex;gap:6px;overflow-x:auto;scrollbar-width:none}
+.tabs button{flex:0 0 auto;font:500 14px var(--f-body);color:var(--muted);background:transparent;border:1px solid var(--line);border-radius:999px;padding:7px 14px;cursor:pointer}
+.tabs button[aria-selected="true"]{background:var(--ink);color:var(--bg);border-color:var(--ink)}
+.tabs button:focus-visible,button:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+
+section.panel{display:grid;gap:14px;margin-top:10px}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:18px;display:grid;gap:12px;min-width:0}
+.card-head{display:flex;justify-content:space-between;align-items:baseline;gap:10px;flex-wrap:wrap}
+.meal-time{font-family:var(--f-data);font-size:12px;color:var(--accent);font-weight:600;letter-spacing:.04em}
+ul.items{margin:0;padding:0;list-style:none;display:grid;gap:6px}
+ul.items li{display:grid;grid-template-columns:1fr auto;gap:10px;border-bottom:1px dashed var(--line);padding-bottom:6px}
+ul.items li:last-child{border-bottom:0}
+.macro{display:flex;gap:14px;flex-wrap:wrap;font-size:13px;color:var(--muted)}
+.macro b{color:var(--ink);font-family:var(--f-data);font-weight:600}
+.note{font-size:14px;background:var(--accent-soft);border-radius:8px;padding:10px 12px}
+.pill{display:inline-flex;align-items:center;gap:6px;font-size:12px;font-weight:700;padding:3px 10px;border-radius:999px;white-space:nowrap}
+.pill.good{background:var(--good-bg);color:var(--good)}
+.pill.caution{background:var(--warn-bg);color:var(--warn)}
+.pill.stop{background:var(--stop-bg);color:var(--stop)}
+.pill.done{background:var(--accent);color:var(--accent-ink)}
+.pill.todo{border:1px solid var(--line);color:var(--muted)}
+
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.lights{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+.light{border-radius:8px;padding:12px;display:grid;gap:6px;align-content:start;font-size:14px}
+.light h3{font-family:var(--f-body);font-size:13px;font-weight:700}
+.light.good{background:var(--good-bg)} .light.good h3{color:var(--good)}
+.light.caution{background:var(--warn-bg)} .light.caution h3{color:var(--warn)}
+.light.stop{background:var(--stop-bg)} .light.stop h3{color:var(--stop)}
+.light ul{margin:0;padding-left:16px}
+ol.rules{margin:0;padding-left:20px;display:grid;gap:6px}
+
+/* workout */
+.ex{display:grid;grid-template-columns:auto 1fr auto;gap:12px;align-items:start;padding-block:10px;border-bottom:1px solid var(--line)}
+.ex:last-child{border-bottom:0}
+.ex input{width:20px;height:20px;margin-top:2px;accent-color:var(--accent)}
+.ex .sets{font-family:var(--f-data);font-size:13px;white-space:nowrap}
+.ex label{cursor:pointer;display:grid;gap:2px}
+.ex label span{font-size:13px;color:var(--muted)}
+.ex.checked label b{text-decoration:line-through;color:var(--muted)}
+.week{display:grid;grid-template-columns:repeat(7,1fr);gap:6px}
+.week div{border:1px solid var(--line);border-radius:8px;padding:8px 4px;text-align:center;font-size:12px;display:grid;gap:2px}
+.week div.today{border-color:var(--accent);background:var(--accent-soft)}
+.week b{font-size:13px}
+.walks{display:flex;gap:8px;flex-wrap:wrap}
+.walks label{display:flex;gap:6px;align-items:center;border:1px solid var(--line);border-radius:999px;padding:6px 12px;cursor:pointer;font-size:14px}
+.walks input{accent-color:var(--accent)}
+
+/* analyze */
+.drop{border:1.5px dashed var(--line);border-radius:var(--r);padding:20px;text-align:center;display:grid;gap:8px;justify-items:center;cursor:pointer;background:var(--bg)}
+.drop.has{padding:10px}
+.drop img{max-height:260px;border-radius:8px;object-fit:cover}
+.form-row{display:grid;grid-template-columns:140px 1fr;gap:10px}
+select,input[type=text],input[type=number],textarea{font:15px var(--f-body);color:var(--ink);background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:9px 10px;width:100%}
+textarea{resize:vertical;min-height:44px}
+.btn{font:700 15px var(--f-body);background:var(--accent);color:var(--accent-ink);border:0;border-radius:8px;padding:12px 18px;cursor:pointer}
+.btn:disabled{opacity:.5;cursor:not-allowed}
+.btn.ghost{background:transparent;color:var(--ink);border:1px solid var(--line);font-weight:500;padding:8px 12px;font-size:13px}
+.result{display:grid;gap:12px}
+.verdict{display:flex;gap:12px;align-items:center;flex-wrap:wrap}
+.verdict h3{font-size:18px}
+table{width:100%;border-collapse:collapse;font-size:14px}
+th,td{text-align:right;padding:6px 4px;border-bottom:1px solid var(--line);white-space:nowrap}
+th:first-child,td:first-child{text-align:left;white-space:normal}
+th{font-size:12px;color:var(--muted);font-weight:500}
+td{font-family:var(--f-data);font-variant-numeric:tabular-nums;font-size:13px}
+td:first-child{font-family:var(--f-body);font-size:14px}
+.tbl{overflow-x:auto}
+.status{font-size:14px;color:var(--muted)}
+.err{color:var(--stop);font-size:14px}
+
+/* log */
+.logmeal{display:grid;grid-template-columns:64px 1fr auto;gap:12px;align-items:center;padding-block:10px;border-bottom:1px solid var(--line)}
+.logmeal:last-child{border-bottom:0}
+.thumb{width:64px;height:64px;border-radius:8px;object-fit:cover;background:var(--accent-soft);display:flex;align-items:center;justify-content:center;font-size:11px;color:var(--muted)}
+.logmeal .meta{min-width:0;display:grid;gap:2px}
+.logmeal .meta p{font-size:13px;color:var(--muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.inputs{display:grid;grid-template-columns:1fr 1fr auto;gap:10px;align-items:end}
+.inputs label{display:grid;gap:4px;font-size:13px;color:var(--muted)}
+.chart{overflow-x:auto}
+.chart svg{display:block;width:100%;min-width:320px;height:auto}
+.empty{font-size:14px;color:var(--muted);padding:14px;border:1px dashed var(--line);border-radius:8px;text-align:center}
+.confirm{display:flex;gap:6px;align-items:center}
+
+/* biz */
+.biz h3{font-family:var(--f-display)}
+.biz p,.biz li{font-size:14.5px}
+.biz ul{margin:0;padding-left:18px;display:grid;gap:4px}
+.price{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+.price div{border:1px solid var(--line);border-radius:8px;padding:12px;display:grid;gap:4px;align-content:start}
+.price div.hl{border-color:var(--accent);background:var(--accent-soft)}
+.price b.num{font-size:18px}
+.road{display:grid;gap:8px}
+.road div{display:grid;grid-template-columns:72px 1fr;gap:10px;font-size:14px}
+.road .num{color:var(--accent);font-weight:600}
+label.btn{display:inline-block}
+.foot{font-size:12px;color:var(--muted);margin-top:24px;line-height:1.7}
+a{color:var(--accent)}
+
+@media (max-width:560px){
+  .gauge{grid-template-columns:1fr;justify-items:center}
+  .bars{width:100%}
+  .grid2,.lights,.price{grid-template-columns:1fr}
+  .form-row{grid-template-columns:1fr}
+  .inputs{grid-template-columns:1fr 1fr}
+  .inputs .btn{grid-column:1/-1}
+  .week{gap:3px}
+  .week div{padding:6px 2px;font-size:11px}
+}
+@media (prefers-reduced-motion:reduce){.fill{transition:none}}
+</style>
+
+</head>
+<body>
+<div class="wrap">
+  <header class="top">
+    <div>
+      <p class="eyebrow" id="today-label">오늘</p>
+      <div class="brand"><h1>허리90 코치</h1><span class="mark">허리 &lt; 90cm</span></div>
+    </div>
+    <p class="muted" style="font-size:13px" id="profile-line"></p>
+  </header>
+
+  <div class="gauge" aria-label="오늘 섭취 현황">
+    <div class="ring">
+      <svg viewBox="0 0 120 120" width="118" height="118" aria-hidden="true">
+        <circle cx="60" cy="60" r="50" fill="none" stroke="var(--accent-soft)" stroke-width="12"/>
+        <circle id="ring-arc" cx="60" cy="60" r="50" fill="none" stroke="var(--accent)" stroke-width="12" stroke-linecap="round" stroke-dasharray="314.16" stroke-dashoffset="314.16" transform="rotate(-90 60 60)"/>
+      </svg>
+      <div class="center"><b id="kcal-left">0</b><span>kcal 남음</span></div>
+    </div>
+    <div class="bars" id="bars"></div>
+  </div>
+
+  <nav class="tabs" role="tablist">
+    <button role="tab" id="tab-plan" aria-selected="true" data-tab="plan">오늘 식단</button>
+    <button role="tab" id="tab-scan" aria-selected="false" data-tab="scan">사진 분석</button>
+    <button role="tab" id="tab-move" aria-selected="false" data-tab="move">운동</button>
+    <button role="tab" id="tab-log" aria-selected="false" data-tab="log">기록</button>
+    <button role="tab" id="tab-biz" aria-selected="false" data-tab="biz">사업 구상</button>
+  </nav>
+
+  <!-- 오늘 식단 -->
+  <section class="panel" id="panel-plan">
+    <article class="card">
+      <div class="card-head"><div><p class="meal-time">아침 · 07:00</p><h2>블루베리 콩 스무디 + 달걀</h2></div><span id="st-아침"></span></div>
+      <ul class="items">
+        <li><span>블루베리 한 줌 (50g)</span><span class="num">29 kcal</span></li>
+        <li><span>삶은 검은콩 한 줌 (40g)</span><span class="num">69 kcal</span></li>
+        <li><span>우유 200ml (저지방이면 더 좋음)</span><span class="num">130 kcal</span></li>
+        <li><span>바나나 <b>½개</b>로 줄이기</span><span class="num">50 kcal</span></li>
+        <li><span><b>추가</b> 삶은 달걀 2개 또는 무가당 그릭요거트 100g</span><span class="num">150 kcal</span></li>
+      </ul>
+      <div class="macro"><span>합계 <b>≈430</b> kcal</span><span>단백질 <b>≈27</b> g</span><span>탄수 <b>≈45</b> g</span></div>
+      <p class="note"><b>바나나는 빼지 말고 반 개로.</b> 갈아 마시면 혈당이 빨리 오르는데, 한 개 전체는 당이 과합니다. 반 개만 넣고 대신 단백질(달걀·그릭요거트)을 더하면 점심까지 덜 배고프고 근육 재료도 채워집니다. 지금 아침은 단백질이 13g 정도라 부족했어요.</p>
+    </article>
+
+    <article class="card">
+      <div class="card-head"><div><p class="meal-time">점심 · 12:00 · 외식</p><h2>직장인 점심 공략법</h2></div><span id="st-점심"></span></div>
+      <ol class="rules">
+        <li><b>밥은 ⅔공기.</b> 받자마자 덜어내세요. 이것만으로 약 100kcal 줄어듭니다.</li>
+        <li><b>먹는 순서: 채소 → 고기·생선·두부 → 밥.</b> 같은 양이라도 혈당이 덜 튑니다.</li>
+        <li><b>국물은 건더기만.</b> 국밥은 밥을 말지 말고 따로.</li>
+        <li><b>단백질 반찬 하나는 꼭.</b> 점심 목표는 단백질 30g 이상(손바닥 크기 고기·생선 1장).</li>
+        <li><b>식후 10분 걷기.</b> 내장지방에 가장 싸고 확실한 습관입니다.</li>
+      </ol>
+      <div class="lights">
+        <div class="light good"><h3>추천</h3><ul><li>생선구이 백반</li><li>순두부·청국장</li><li>쌈밥·보쌈 정식</li><li>샤브샤브</li><li>비빔밥(고추장 반)</li><li>제육(밥 ⅔)</li></ul></div>
+        <div class="light caution"><h3>양 조절하면 OK</h3><ul><li>김치찌개·된장찌개</li><li>국밥(밥 따로)</li><li>돈가스(소스 따로, 밥 반)</li><li>냉면(면 ⅔, 계란 먹기)</li><li>회덮밥</li></ul></div>
+        <div class="light stop"><h3>되도록 피하기</h3><ul><li>짜장+탕수육 세트</li><li>라면+김밥</li><li>크림 파스타</li><li>떡볶이·튀김 분식</li><li>식후 달달한 라떼</li></ul></div>
+      </div>
+      <p class="muted" style="font-size:13px">메뉴판이나 식판을 찍어 <b>사진 분석</b> 탭에 올리면 무엇을 고를지, 얼마나 남길지 알려줍니다.</p>
+    </article>
+
+    <article class="card">
+      <div class="card-head"><div><p class="meal-time" id="dinner-day">저녁 · 19:00 · 집밥</p><h2 id="dinner-title"></h2></div><span id="st-저녁"></span></div>
+      <ul class="items" id="dinner-items"></ul>
+      <div class="macro" id="dinner-macro"></div>
+      <p class="note" id="dinner-tip"></p>
+      <details>
+        <summary style="cursor:pointer;font-size:14px;color:var(--muted)">이번 주 저녁 전체 보기</summary>
+        <ul class="items" id="dinner-week" style="margin-top:10px"></ul>
+      </details>
+    </article>
+
+    <article class="card">
+      <div class="card-head"><h3>간식이 당길 때</h3></div>
+      <p style="font-size:14px">무가당 그릭요거트 100g · 삶은 달걀 1개 · 아몬드 10알 · 방울토마토 한 컵 중 하나. 과자·빵·믹스커피는 내장지방으로 바로 갑니다. 술은 주 1회, 소주 반 병 이하로.</p>
+    </article>
+  </section>
+
+  <!-- 사진 분석 -->
+  <section class="panel" id="panel-scan" hidden>
+    <article class="card">
+      <div class="card-head"><h2>먹은 음식 분석</h2><span class="muted" style="font-size:13px">사진 또는 글로 · 45도 각도, 수저가 함께 나오게</span></div>
+      <label class="drop" id="drop" for="photo">
+        <img id="preview" alt="선택한 음식 사진" hidden>
+        <span id="drop-text"><b>음식 사진 선택</b><br><small class="muted">식판, 메뉴판, 배달 음식 모두 가능</small></span>
+      </label>
+      <input type="file" id="photo" accept="image/jpeg,image/png,image/webp" hidden>
+      <div class="form-row">
+        <select id="slot" aria-label="식사 구분"><option>아침</option><option>점심</option><option>저녁</option><option>간식</option></select>
+        <textarea id="memo" rows="2" placeholder="예: 밥 반 공기 남김 / 사진 없이 '김치찌개 백반, 공깃밥 1개'처럼 적어도 됩니다"></textarea>
+      </div>
+      <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap">
+        <button class="btn" id="analyze">분석하기</button>
+        <button class="btn ghost" id="stop" hidden>중지</button>
+        <span class="status" id="scan-status"></span>
+      </div>
+      <p class="err" id="scan-err" hidden></p>
+    </article>
+    <article class="card result" id="result" hidden></article>
+  </section>
+
+  <!-- 운동 -->
+  <section class="panel" id="panel-move" hidden>
+    <article class="card">
+      <div class="card-head"><h2>이번 주 운동표</h2><span class="muted" style="font-size:13px">무릎 부담 최소</span></div>
+      <div class="week" id="week"></div>
+    </article>
+    <article class="card">
+      <div class="card-head"><div><p class="meal-time" id="wo-dur"></p><h2 id="wo-title"></h2></div><span id="wo-status"></span></div>
+      <p class="muted" style="font-size:14px" id="wo-goal"></p>
+      <div id="wo-list"></div>
+    </article>
+    <article class="card">
+      <div class="card-head"><h3>준비물 (총 5~8만원)</h3><span class="muted" style="font-size:13px">없으면 대체 가능</span></div>
+      <ul class="items">
+        <li><span><b>요가매트</b> 10mm 이상 두꺼운 것 · 무릎 보호</span><span class="muted">필수</span></li>
+        <li><span><b>덤벨 한 쌍</b> 5~8kg, 또는 무게 조절형 · 없으면 물 2L 페트병</span><span class="muted">필수</span></li>
+        <li><span><b>저항 밴드 세트</b> 긴 루프형 · 문 고정 앵커 포함</span><span class="muted">필수</span></li>
+        <li><span><b>튼튼한 의자</b> 바퀴 없는 것</span><span class="muted">집에 있음</span></li>
+        <li><span><b>문틀 철봉</b> 턱걸이 목표용 · 없으면 밴드 풀다운</span><span class="muted">선택</span></li>
+        <li><span><b>폼롤러</b></span><span class="muted">선택</span></li>
+      </ul>
+    </article>
+    <article class="card">
+      <h3>매일: 식후 10분 걷기</h3>
+      <div class="walks" id="walks"></div>
+    </article>
+    <article class="card">
+      <h3>무릎 규칙</h3>
+      <ol class="rules">
+        <li><b>통증 3/10 이하</b>에서만 진행. 운동 중 그보다 아프면 그 동작은 범위를 줄이거나 빼세요.</li>
+        <li><b>다음 날 아침이 기준.</b> 무릎이 전날보다 붓거나 아프면 하체 강도를 한 단계 낮춥니다.</li>
+        <li><b>당분간 피하기:</b> 점프, 깊은 런지·스쿼트, 계단 반복, 내리막 달리기.</li>
+        <li><b>달리기 대신</b> 집에서 하는 점프 없는 서킷과 평지 빠른 걷기로 유산소를 채웁니다.</li>
+        <li>허벅지 앞(대퇴사두)과 엉덩이 근육이 강해질수록 무릎 부담이 줄어듭니다. 하체 운동을 빼지 말고 <b>각도만 얕게</b> 하세요.</li>
+      </ol>
+      <p class="muted" style="font-size:13px">2주 이상 계속 아프거나, 붓기·잠김·힘 빠짐이 있으면 정형외과 진료를 먼저 받으세요.</p>
+    </article>
+    <article class="card">
+      <h3>참고 영상</h3>
+      <p style="font-size:14px"><a href="https://www.youtube.com/watch?v=RBJ9ESzu3HM" target="_blank" rel="noopener">지방이 타는 몸을 만들고 4주 5kg (다이어트하는 사람들)</a></p>
+      <p class="muted" style="font-size:13px">71kg에서 4주 5kg은 근육까지 빠지기 쉬운 속도입니다. 이 앱은 체중보다 <b>허리둘레</b>를 주 지표로, 월 1~2kg 감량·근육 유지를 목표로 잡았습니다.</p>
+    </article>
+  </section>
+
+  <!-- 기록 -->
+  <section class="panel" id="panel-log" hidden>
+    <article class="card">
+      <div class="card-head"><h2>오늘 체중·허리둘레</h2><span class="muted" style="font-size:13px">아침 공복, 배꼽 높이</span></div>
+      <div class="inputs">
+        <label for="in-weight">체중 (kg)<input type="number" id="in-weight" step="0.1" inputmode="decimal" placeholder="71.0"></label>
+        <label for="in-waist">허리 (cm)<input type="number" id="in-waist" step="0.5" inputmode="decimal" placeholder="예: 92"></label>
+        <button class="btn" id="save-body">저장</button>
+      </div>
+      <p class="status" id="body-status"></p>
+    </article>
+    <article class="card">
+      <div class="card-head"><h3>최근 14일 추이</h3><span class="muted" style="font-size:12px">허리 90cm = 남성 복부비만 기준선</span></div>
+      <div class="chart" id="chart"></div>
+    </article>
+    <article class="card">
+      <div class="card-head"><h3>오늘 먹은 것</h3><span class="num muted" style="font-size:13px" id="log-sum"></span></div>
+      <div id="log-list"></div>
+    </article>
+    <article class="card">
+      <h3>내 정보</h3>
+      <div class="inputs" style="grid-template-columns:repeat(3,1fr) auto">
+        <label for="p-age">나이<input type="number" id="p-age"></label>
+        <label for="p-height">키 (cm)<input type="number" id="p-height"></label>
+        <label for="p-weight">기준 체중<input type="number" id="p-weight" step="0.1"></label>
+        <button class="btn ghost" id="save-profile">적용</button>
+      </div>
+      <p class="muted" style="font-size:13px" id="target-explain"></p>
+    </article>
+    <article class="card">
+      <div class="card-head"><h3>AI 설정</h3><a href="https://console.anthropic.com/settings/keys" target="_blank" rel="noopener" style="font-size:13px">API 키 발급</a></div>
+      <div class="form-row">
+        <label for="ai-model" class="muted" style="font-size:13px;align-self:center">분석 모델</label>
+        <select id="ai-model"><option value="claude-sonnet-5-5">Sonnet (정확, 권장)</option><option value="claude-haiku-4-5-20251001">Haiku (빠르고 저렴)</option></select>
+      </div>
+      <input type="text" id="ai-key" placeholder="sk-ant-로 시작하는 API 키" autocomplete="off" spellcheck="false">
+      <div style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn" id="ai-save">저장</button><button class="btn ghost" id="ai-clear">키 삭제</button></div>
+      <p class="status" id="ai-status"></p>
+      <p class="muted" style="font-size:12px">키는 이 브라우저에만 저장되고 Anthropic 서버로만 전송됩니다. 다른 사람에게 링크를 공유해도 키는 공유되지 않지만, 공용 PC에서는 사용 후 삭제하세요.</p>
+    </article>
+    <article class="card">
+      <h3>백업</h3>
+      <p class="muted" style="font-size:13px">기록은 이 기기 브라우저에 저장됩니다. 휴대폰을 바꾸거나 브라우저 데이터를 지우기 전에 백업하세요.</p>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">
+        <button class="btn ghost" id="export">백업 내려받기</button>
+        <label class="btn ghost" for="import" style="cursor:pointer">백업 불러오기</label>
+        <input type="file" id="import" accept="application/json,.json" hidden>
+      </div>
+    </article>
+    <p class="status" id="store-status"></p>
+  </section>
+
+  <!-- 사업 구상 -->
+  <section class="panel biz" id="panel-biz" hidden>
+    <article class="card">
+      <p class="eyebrow">포지셔닝</p>
+      <h2>“40~50대 직장인 남성의 뱃살 전담 코치”</h2>
+      <p>AI 사진 칼로리 앱은 이미 많습니다(필라이즈, 칼로리 AI 등). 이들은 <b>모든 사람</b>을 위한 기록 도구입니다. 허리90은 <b>마른 비만·내장지방형 중년 남성</b> 한 집단만 노리고, 기록이 아니라 <b>“이 자리에서 뭘 고르고 얼마나 남길지”</b>를 결정해주는 코치로 갑니다.</p>
+    </article>
+    <article class="card">
+      <h3>경쟁력이 되는 5가지</h3>
+      <ul>
+        <li><b>메뉴판·식판 분석:</b> 먹은 뒤 기록이 아니라 먹기 전에 찍어서 “제육 말고 생선구이, 밥 ⅓ 남기세요”를 받습니다. 직장인 점심 외식에 정확히 맞습니다.</li>
+        <li><b>회식 모드:</b> 삼겹살·치킨·횟집별 안주 선택, 술 종류·잔 수 가이드, 다음 날 보정 식단 자동 생성.</li>
+        <li><b>허리둘레 KPI:</b> 체중 대신 허리 90cm 돌파를 목표로 한 진행 화면. 국가건강검진 복부비만 기준과 같아 이해가 쉽습니다.</li>
+        <li><b>통증 맞춤 운동:</b> 무릎·허리·어깨 통증 체크에 따라 동작이 자동으로 바뀌는 루틴. 중년층이 운동을 포기하는 가장 큰 이유를 정면으로 다룹니다.</li>
+        <li><b>건강검진 결과 연계:</b> 공복혈당·중성지방·간수치를 입력하면 3개월 뒤 재검까지의 식단 강도를 조정. (진단·치료 표현은 쓰지 않고 비의료 건강관리 범위로 설계)</li>
+      </ul>
+    </article>
+    <article class="card">
+      <h3>요금제</h3>
+      <div class="price">
+        <div><span class="eyebrow">무료</span><b class="num">0원</b><small>사진 분석 하루 2회, 기본 식단·운동표</small></div>
+        <div class="hl"><span class="eyebrow">프리미엄</span><b class="num">월 9,900원</b><small>분석 무제한, 메뉴판 추천, 회식 모드, 주간 리포트. 연 79,000원</small></div>
+        <div><span class="eyebrow">기업·기관</span><b class="num">1인 월 3~5천원</b><small>임직원 건강 챌린지, 팀별 허리둘레 랭킹, 관리자 통계</small></div>
+      </div>
+      <p class="muted" style="font-size:13px">사진 분석은 건마다 AI 비용이 들기 때문에 무료는 횟수를 반드시 제한합니다.</p>
+    </article>
+    <article class="card">
+      <h3>가장 빠른 매출 경로: B2B</h3>
+      <p>개인 구독은 광고비 경쟁이 치열합니다. 반면 <b>대학·공공기관 교직원 복지</b>는 의사결정자가 명확하고, 서울지역 대학 총무인사팀장 네트워크로 바로 시범 운영을 제안할 수 있습니다. “8주 허리둘레 챌린지”를 한 대학에서 무료 파일럿 → 성과 리포트 → 협의회 공유 → 유료 전환 순서가 현실적입니다.</p>
+      <p class="muted" style="font-size:13px">가정: 10개 기관 × 200명 × 월 4,000원 = 월 800만원. 개인 구독 1,000명 × 9,900원 ≈ 월 990만원(앱스토어 수수료 전).</p>
+    </article>
+    <article class="card">
+      <h3>로드맵</h3>
+      <div class="road">
+        <div><span class="num">1개월</span><span>이 웹앱으로 본인 8주 실험. 허리·체중 전후 데이터가 첫 마케팅 자료가 됩니다.</span></div>
+        <div><span class="num">2~3개월</span><span>Firebase 인증·DB, 결제(토스페이먼츠) 붙인 PWA. 지인 30명 베타.</span></div>
+        <div><span class="num">4~6개월</span><span>기업·기관 관리자 화면, 챌린지 기능. 대학 1곳 파일럿.</span></div>
+        <div><span class="num">6개월~</span><span>앱스토어 출시, 건강검진 연동, 통증별 운동 영상 라이브러리.</span></div>
+      </div>
+    </article>
+    <article class="card">
+      <h3>주의할 점</h3>
+      <ul>
+        <li>“치료”, “질병 개선” 같은 표현은 의료법 문제가 될 수 있습니다. 보건복지부 비의료 건강관리서비스 가이드라인 범위 안에서 문구를 씁니다.</li>
+        <li>건강 데이터는 민감정보라 별도 동의, 암호화, 기업 고객에게는 개인 식단이 아닌 통계만 제공해야 합니다.</li>
+        <li>사진 칼로리는 ±20~30% 오차가 납니다. “정확한 숫자”보다 “좋음·주의·피하기” 판정과 행동 지시를 상품의 핵심으로 둡니다.</li>
+      </ul>
+    </article>
+  </section>
+
+  <p class="foot">영양 수치는 일반적인 식품 기준의 추정치입니다. 기저질환이 있거나 약을 복용 중이면 식단·운동 강도를 의사와 먼저 상의하세요.</p>
+</div>
+
+<script>
+(function(){
+  "use strict";
+  // ---------- helpers ----------
+  const $ = (s) => document.querySelector(s);
+  const el = (tag, attrs = {}, ...kids) => {
+    const n = document.createElement(tag);
+    for (const [k, v] of Object.entries(attrs)) {
+      if (k === "class") n.className = v; else if (k === "text") n.textContent = v; else n.setAttribute(k, v);
+    }
+    for (const c of kids) if (c != null) n.append(c);
+    return n;
+  };
+  const pad = (n) => String(n).padStart(2, "0");
+  const dateKey = (d = new Date()) => `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`;
+  const DOW = ["일","월","화","수","목","금","토"];
+  const now = new Date();
+  const todayKey = dateKey(now);
+  const dow = now.getDay();
+  $("#today-label").textContent = `${now.getMonth()+1}월 ${now.getDate()}일 ${DOW[dow]}요일`;
+  const lsGet = (k, d) => { try { const v = localStorage.getItem(k); return v ? JSON.parse(v) : d; } catch { return d; } };
+  const lsSet = (k, v) => { try { localStorage.setItem(k, JSON.stringify(v)); } catch {} };
+
+  // ---------- state ----------
+  let profile = { age: 47, height: 172, weight: 71 };
+  let day = { date: todayKey, meals: [], workout: {}, walks: {}, weight: null, waist: null };
+  let history = []; // [{date, weight, waist}]
+
+  function targets(p = profile) {
+    const bmr = 10 * p.weight + 6.25 * p.height - 5 * p.age + 5;
+    const tdee = bmr * 1.45;
+    const kcal = Math.round((tdee - 400) / 50) * 50;
+    const protein = Math.round(p.weight * 1.6);
+    const fat = Math.round(kcal * 0.25 / 9);
+    const carb = Math.round((kcal - protein * 4 - fat * 9) / 4);
+    return { bmr: Math.round(bmr), tdee: Math.round(tdee), kcal, protein, fat, carb };
+  }
+
+  // ---------- dinner plan ----------
+  const DINNERS = {
+    0: { t: "돼지 앞다리 수육 쌈", items: [["앞다리 수육 120g","250"],["쌈채소 듬뿍 + 쌈장 1작은술","40"],["현미밥 ⅓공기","100"],["김치·나물","60"]], k: 450, p: 33, tip: "기름 적은 앞다리살을 삶으면 지방이 빠집니다. 쌈채소로 밥 양을 대신 채우세요." },
+    1: { t: "닭가슴살 스테이크 + 구운 채소", items: [["닭가슴살 150g (올리브유 1작은술)","210"],["브로콜리·파프리카·양파 구이","70"],["고구마 100g","130"],["무가당 그릭요거트 50g","40"]], k: 450, p: 42, tip: "닭가슴살은 소금 대신 후추·허브·레몬으로. 일요일에 3~4일치 미리 구워두면 편합니다." },
+    2: { t: "두부 달걀 스크램블 볼", items: [["부침 두부 ½모","130"],["달걀 2개","150"],["닭가슴살 소시지 1개","90"],["양배추·쌈채소 샐러드","40"],["현미밥 ⅓공기","100"]], k: 510, p: 40, tip: "두부와 달걀을 같이 볶으면 포만감이 오래 갑니다. 케첩 대신 스리라차 조금." },
+    3: { t: "고등어구이 정식", items: [["고등어구이 1토막 (100g)","230"],["시금치·콩나물 무침","70"],["현미밥 ½공기","150"],["된장국 (건더기 위주)","60"]], k: 510, p: 32, tip: "등푸른 생선의 오메가3는 중성지방 관리에 좋습니다. 주 2회 생선을 목표로." },
+    4: { t: "닭가슴살 채소 볶음", items: [["닭가슴살 150g","165"],["양배추·양파·버섯·애호박","80"],["굴소스 1작은술 + 들기름 1작은술","60"],["곤약현미밥 1공기","150"]], k: 455, p: 41, tip: "곤약밥을 섞으면 밥 한 공기를 먹어도 칼로리는 절반입니다." },
+    5: { t: "소고기 우둔 구이 + 샐러드", items: [["소고기 우둔·홍두깨 150g","240"],["샐러드 + 발사믹 1큰술","70"],["삶은 감자 小 1개","90"],["버섯 구이","30"]], k: 430, p: 42, tip: "금요일 회식이 있으면 이 메뉴는 토요일로 넘기고, 회식에선 고기·생선 위주로 드세요. 술은 소주 반 병까지." },
+    6: { t: "닭가슴살 단백질 샐러드", items: [["닭가슴살 120g","130"],["삶은 달걀 1개","75"],["채소·방울토마토·오이","60"],["아몬드 10알","70"],["무가당 그릭요거트 100g + 블루베리","110"]], k: 445, p: 42, tip: "주말 저녁 외식이 잡히면 점심을 이 샐러드로 바꾸세요." }
+  };
+  function renderDinner() {
+    const d = DINNERS[dow];
+    $("#dinner-day").textContent = `저녁 · 19:00 · 집밥 · ${DOW[dow]}요일`;
+    $("#dinner-title").textContent = d.t;
+    const ul = $("#dinner-items"); ul.replaceChildren();
+    d.items.forEach(([n, k]) => ul.append(el("li", {}, el("span", { text: n }), el("span", { class: "num", text: k + " kcal" }))));
+    $("#dinner-macro").replaceChildren(el("span", {}, "합계 ", el("b", { text: "≈" + d.k }), " kcal"), el("span", {}, "단백질 ", el("b", { text: "≈" + d.p }), " g"));
+    $("#dinner-tip").textContent = d.tip;
+    const wk = $("#dinner-week"); wk.replaceChildren();
+    [1,2,3,4,5,6,0].forEach(i => wk.append(el("li", {}, el("span", {}, el("b", { text: DOW[i] + " " }), DINNERS[i].t), el("span", { class: "num", text: DINNERS[i].k + " kcal" }))));
+  }
+
+  // ---------- workouts ----------
+  const UPPER_A = { t: "상체 A · 밀기와 당기기 (홈트)", dur: "35분 · 근력 · 덤벨·밴드", goal: "팔·어깨·등 근육을 키워 기초대사량을 올립니다. 세트마다 마지막 2회가 힘들 정도로. 세트 사이 60초 휴식.", ex: [
+    ["인클라인 푸시업","식탁·소파 팔걸이에 손 짚고. 쉬워지면 낮은 의자로 → 바닥 무릎 푸시업","3×10–12"],
+    ["덤벨 원암 로우","의자에 한 손·한 무릎 대고 등으로 당기기 (덤벨 없으면 물 2L 페트병)","3×10"],
+    ["의자에 앉아 덤벨 숄더프레스","등받이에 허리 붙이고, 팔꿈치는 살짝 앞으로","3×10"],
+    ["밴드 풀어파트","굽은 어깨 교정. 견갑골을 모으기","3×15"],
+    ["문틀 철봉 매달리기","턱걸이 준비. 어깨를 귀에서 멀리 (철봉 없으면 밴드 풀다운 3×12)","3×최대"]]};
+  const UPPER_B = { t: "상체 B · 턱걸이 진행 (홈트)", dur: "35분 · 근력 · 덤벨·밴드", goal: "가슴·등·팔. 문틀 철봉으로 네거티브 턱걸이를 연습해 실제 턱걸이에 다가갑니다.", ex: [
+    ["덤벨 플로어 프레스","매트에 누워서. 벤치 없이도 어깨 부담이 적음","3×10"],
+    ["밴드 풀다운","문 위쪽에 밴드를 걸고 무릎 꿇고 가슴 쪽으로 당기기","3×12"],
+    ["네거티브 턱걸이","의자 딛고 올라가 5초간 천천히 내려오기 (철봉 없으면 테이블 아래 인버티드 로우)","3×3"],
+    ["덤벨 컬 + 해머 컬","반동 없이 번갈아","2×12"],
+    ["사이드 플랭크","무릎 대고 해도 됨","2×30초"]]};
+  const LOWER = { t: "하체·코어 · 무릎 친화 (홈트)", dur: "30분 · 근력 · 매트·의자", goal: "엉덩이·허벅지 근육이 무릎을 보호합니다. 통증 없는 범위만. 거실 매트 한 장이면 됩니다.", ex: [
+    ["글루트 브리지","엉덩이를 조이며 2초 멈추기. 쉬우면 한 다리씩","3×15"],
+    ["덤벨 루마니안 데드리프트","무릎은 살짝만 굽히고 엉덩이를 뒤로","3×10"],
+    ["의자 앉았다 일어서기","의자에 살짝 닿을 깊이. 통증 있으면 쿠션을 올려 높이기","3×10"],
+    ["밴드 무릎 펴기 (TKE)","밴드를 책상 다리에 걸고 무릎 뒤에 감아 끝까지 펴기","3×15"],
+    ["누워서 다리 들기","반대쪽 무릎은 세우고, 편 다리를 45°까지","3×12"],
+    ["벽 기대 앉기 (얕게)","무릎 각도 120° 정도. 통증 완화에 도움","3×30초"],
+    ["옆으로 누워 다리 들기","엉덩이 옆 근육. 무릎 안쪽 쏠림을 막아줌","2×15"],
+    ["데드버그","허리를 바닥에 붙인 채","3×10"]]};
+  const CARDIO = (min) => { const rounds = Math.round((min - 10) / 6); return { t: "홈 유산소 · 점프 없는 서킷", dur: `${min}분 · 유산소 · 맨몸`, goal: `아래 4동작을 40초 하고 20초 쉬기, 한 바퀴 4분 + 휴식 2분을 ${rounds}바퀴. 말은 할 수 있지만 노래는 힘든 강도(심박 약 110–130)를 유지하세요. 층간소음 걱정 없는 동작들입니다.`, ex: [
+    ["워밍업: 제자리 걷기 + 팔 돌리기","","5분"],
+    ["제자리 빠르게 걷기 (팔 크게)","무릎은 골반 높이까지만","40초"],
+    ["사이드 스텝 + 팔 들기","옆으로 두 걸음씩, 무릎 살짝만 굽히기","40초"],
+    ["섀도복싱","발은 고정, 상체 회전으로 펀치","40초"],
+    ["서서 팔꿈치-무릎 터치","반대쪽 팔꿈치와 무릎을 배 앞에서","40초"],
+    ["쿨다운: 종아리·허벅지·가슴 스트레칭","","5분"]]}; };
+  const REST = { t: "회복 · 스트레칭과 걷기", dur: "25분 · 회복", goal: "쉬는 날도 움직이기. 근육통이 빨리 풀립니다. 날씨가 좋으면 동네 평지 걷기로 바꿔도 좋아요.", ex: [
+    ["집 안 걷기 또는 동네 평지 걷기","","15분"],
+    ["폼롤러 허벅지 앞·옆","무릎 위 근육 풀기 (폼롤러 없으면 손으로 주무르기)","각 1분"],
+    ["햄스트링·고관절 스트레칭","매트에서 반동 없이","각 30초×2"],
+    ["고양이-소 자세","허리 풀기","10회"]]};
+  const WEEK = { 0: REST, 1: UPPER_A, 2: LOWER, 3: CARDIO(35), 4: UPPER_B, 5: LOWER, 6: CARDIO(45) };
+  const WEEK_SHORT = { 0: "회복", 1: "상체A", 2: "하체", 3: "유산소", 4: "상체B", 5: "하체", 6: "유산소" };
+
+  function renderWorkout() {
+    const w = $("#week"); w.replaceChildren();
+    [1,2,3,4,5,6,0].forEach(i => w.append(el("div", { class: i === dow ? "today" : "" }, el("b", { text: DOW[i] }), el("span", { text: WEEK_SHORT[i] }))));
+    const wo = WEEK[dow];
+    $("#wo-title").textContent = wo.t;
+    $("#wo-dur").textContent = "오늘 · " + wo.dur;
+    $("#wo-goal").textContent = wo.goal;
+    const list = $("#wo-list"); list.replaceChildren();
+    wo.ex.forEach(([name, how, sets], i) => {
+      const id = "ex-" + i;
+      const cb = el("input", { type: "checkbox", id });
+      cb.checked = !!day.workout[i];
+      const row = el("div", { class: "ex" + (cb.checked ? " checked" : "") }, cb,
+        el("label", { for: id }, el("b", { text: name }), how ? el("span", { text: how }) : null),
+        el("span", { class: "sets", text: sets }));
+      cb.addEventListener("change", () => { day.workout[i] = cb.checked; row.classList.toggle("checked", cb.checked); renderWoStatus(); saveDay(); });
+      list.append(row);
+    });
+    renderWoStatus();
+    const walks = $("#walks"); walks.replaceChildren();
+    ["아침","점심","저녁"].forEach(s => {
+      const id = "walk-" + s;
+      const cb = el("input", { type: "checkbox", id }); cb.checked = !!day.walks[s];
+      cb.addEventListener("change", () => { day.walks[s] = cb.checked; saveDay(); });
+      walks.append(el("label", { for: id }, cb, s + " 식후"));
+    });
+  }
+  function renderWoStatus() {
+    const n = WEEK[dow].ex.length, done = WEEK[dow].ex.filter((_, i) => day.workout[i]).length;
+    const s = $("#wo-status"); s.replaceChildren(el("span", { class: "pill " + (done === n ? "done" : "todo"), text: `${done}/${n} 완료` }));
+  }
+
+  // ---------- gauge ----------
+  function totals() {
+    return day.meals.reduce((a, m) => {
+      const t = m.total || {};
+      a.kcal += +t.kcal || 0; a.protein += +t.protein || 0; a.carb += +t.carb || 0; a.fat += +t.fat || 0; return a;
+    }, { kcal: 0, protein: 0, carb: 0, fat: 0 });
+  }
+  function renderGauge() {
+    const T = targets(), t = totals();
+    const left = T.kcal - Math.round(t.kcal);
+    $("#kcal-left").textContent = left >= 0 ? left.toLocaleString() : "+" + (-left).toLocaleString();
+    $("#kcal-left").nextElementSibling.textContent = left >= 0 ? "kcal 남음" : "kcal 초과";
+    const frac = Math.min(t.kcal / T.kcal, 1);
+    const arc = $("#ring-arc");
+    arc.setAttribute("stroke-dashoffset", String(314.16 * (1 - frac)));
+    arc.setAttribute("stroke", left < 0 ? "var(--stop)" : "var(--accent)");
+    const rows = [["칼로리", t.kcal, T.kcal, "kcal"], ["단백질", t.protein, T.protein, "g"], ["탄수화물", t.carb, T.carb, "g"], ["지방", t.fat, T.fat, "g"]];
+    const bars = $("#bars"); bars.replaceChildren();
+    rows.forEach(([name, v, goal, u], i) => {
+      const pct = Math.min(v / goal * 100, 100);
+      const over = i !== 1 && v > goal * 1.05;
+      bars.append(el("div", { class: "bar-row" }, el("span", { text: name }),
+        el("div", { class: "track" }, el("div", { class: "fill" + (over ? " over" : ""), style: `width:${pct}%` })),
+        el("span", { class: "num", text: `${Math.round(v)}/${goal}${u === "g" ? "g" : ""}` })));
+    });
+    $("#profile-line").textContent = `${profile.age}세 · ${profile.height}cm · ${profile.weight}kg · 목표 ${T.kcal.toLocaleString()}kcal / 단백질 ${T.protein}g`;
+    ["아침","점심","저녁"].forEach(s => {
+      const has = day.meals.some(m => m.slot === s);
+      const host = document.getElementById("st-" + s);
+      host.replaceChildren(el("span", { class: "pill " + (has ? "done" : "todo"), text: has ? "기록됨" : "기록 전" }));
+    });
+  }
+
+  // ---------- log ----------
+  const VERDICT = { good: ["good", "좋아요"], caution: ["caution", "주의"], stop: ["stop", "피하세요"] };
+  function renderLog() {
+    const list = $("#log-list"); list.replaceChildren();
+    const t = totals();
+    $("#log-sum").textContent = `${Math.round(t.kcal).toLocaleString()} kcal · 단백질 ${Math.round(t.protein)}g`;
+    if (!day.meals.length) { list.append(el("p", { class: "empty", text: "아직 기록이 없습니다. 사진 분석 탭에서 첫 식사를 올려보세요." })); return; }
+    day.meals.forEach(m => {
+      const v = VERDICT[m.verdict] || VERDICT.caution;
+      const th = m.thumb ? el("img", { class: "thumb", src: m.thumb, alt: m.slot + " 사진" }) : el("div", { class: "thumb", text: m.slot });
+      const del = el("button", { class: "btn ghost", type: "button", text: "삭제" });
+      const actions = el("div", { class: "confirm" }, del);
+      del.addEventListener("click", () => {
+        const yes = el("button", { class: "btn ghost", type: "button", text: "삭제 확인" });
+        const no = el("button", { class: "btn ghost", type: "button", text: "취소" });
+        yes.addEventListener("click", () => { day.meals = day.meals.filter(x => x.id !== m.id); saveDay(); renderAll(); });
+        no.addEventListener("click", () => actions.replaceChildren(del));
+        actions.replaceChildren(yes, no);
+      });
+      list.append(el("div", { class: "logmeal" }, th,
+        el("div", { class: "meta" }, el("div", {}, el("b", { text: `${m.slot} · ${Math.round(m.total?.kcal || 0)}kcal ` }), el("span", { class: "pill " + v[0], text: v[1] })),
+          el("p", { text: (m.foods || []).map(f => f.name).join(", ") || m.headline || "" })), actions));
+    });
+  }
+
+  function renderChart() {
+    const host = $("#chart"); host.replaceChildren();
+    const pts = [...history.filter(h => h.date !== todayKey), { date: todayKey, weight: day.weight, waist: day.waist }]
+      .filter(h => h.weight || h.waist).sort((a, b) => a.date < b.date ? -1 : 1).slice(-14);
+    if (pts.length < 1) { host.append(el("p", { class: "empty", text: "체중과 허리둘레를 저장하면 여기에 추이가 그려집니다. 허리둘레가 체중보다 내장지방을 더 잘 보여줍니다." })); return; }
+    const W = 640, H = 220, L = 40, R = 40, Tp = 16, B = 30;
+    const xs = (i) => pts.length === 1 ? (L + (W - L - R) / 2) : L + i * (W - L - R) / (pts.length - 1);
+    const series = (key, color, axisLeft) => {
+      const vals = pts.map(p => p[key]).filter(v => v != null);
+      if (!vals.length) return null;
+      let lo = Math.min(...vals), hi = Math.max(...vals);
+      if (key === "waist") { lo = Math.min(lo, 90); hi = Math.max(hi, 90); }
+      if (hi - lo < 2) { lo -= 1; hi += 1; }
+      const y = (v) => Tp + (hi - v) / (hi - lo) * (H - Tp - B);
+      return { key, color, y, lo, hi, axisLeft };
+    };
+    const sw = series("weight", "var(--accent)", true), sz = series("waist", "var(--warn)", false);
+    let svg = `<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="체중과 허리둘레 추이">`;
+    svg += `<line x1="${L}" y1="${H - B}" x2="${W - R}" y2="${H - B}" stroke="var(--line)"/>`;
+    if (sz) {
+      const y90 = sz.y(90);
+      svg += `<line x1="${L}" y1="${y90}" x2="${W - R}" y2="${y90}" stroke="var(--stop)" stroke-dasharray="4 4"/><text x="${W - R + 4}" y="${y90 + 4}" font-size="11" fill="var(--stop)">90</text>`;
+    }
+    [sw, sz].forEach(s => {
+      if (!s) return;
+      const P = pts.map((p, i) => p[s.key] != null ? [xs(i), s.y(p[s.key]), p[s.key]] : null).filter(Boolean);
+      if (P.length > 1) svg += `<polyline fill="none" stroke="${s.color}" stroke-width="2.5" points="${P.map(p => p[0] + "," + p[1]).join(" ")}"/>`;
+      P.forEach((p, i) => { svg += `<circle cx="${p[0]}" cy="${p[1]}" r="${i === P.length - 1 ? 5 : 3}" fill="${s.color}"/>`; });
+      const last = P[P.length - 1];
+      svg += `<text x="${last[0]}" y="${last[1] - 9}" text-anchor="middle" font-size="12" font-weight="600" fill="${s.color}" font-family="IBM Plex Mono, monospace">${last[2]}${s.key === "weight" ? "kg" : "cm"}</text>`;
+      const ax = s.axisLeft ? L - 6 : W - R + 6, anc = s.axisLeft ? "end" : "start";
+      if (!(s.key === "waist")) {
+        svg += `<text x="${ax}" y="${s.y(s.hi) + 4}" text-anchor="${anc}" font-size="10" fill="var(--muted)">${s.hi.toFixed(1)}</text><text x="${ax}" y="${s.y(s.lo) + 4}" text-anchor="${anc}" font-size="10" fill="var(--muted)">${s.lo.toFixed(1)}</text>`;
+      }
+    });
+    pts.forEach((p, i) => { if (pts.length <= 7 || i % 2 === 0 || i === pts.length - 1) svg += `<text x="${xs(i)}" y="${H - 10}" text-anchor="middle" font-size="10" fill="var(--muted)">${p.date.slice(5).replace("-", "/")}</text>`; });
+    svg += `</svg>`;
+    host.innerHTML = svg;
+    host.append(el("div", { class: "macro" }, el("span", { style: "color:var(--accent)", text: "● 체중(kg)" }), el("span", { style: "color:var(--warn)", text: "● 허리(cm)" }), el("span", { style: "color:var(--stop)", text: "--- 허리 90cm 기준선" })));
+  }
+
+  function renderProfileForm() {
+    $("#p-age").value = profile.age; $("#p-height").value = profile.height; $("#p-weight").value = profile.weight;
+    const T = targets();
+    $("#target-explain").textContent = `기초대사량 약 ${T.bmr.toLocaleString()}kcal, 활동 포함 소비 약 ${T.tdee.toLocaleString()}kcal. 하루 400kcal 적게 먹으면 근육은 지키면서 한 달 1~2kg씩 빠집니다. 단백질은 체중 1kg당 1.6g = ${T.protein}g.`;
+    if (day.weight) $("#in-weight").value = day.weight;
+    if (day.waist) $("#in-waist").value = day.waist;
+  }
+
+  function renderAll() { renderGauge(); renderLog(); renderChart(); }
+
+  // ---------- storage (이 기기 브라우저) ----------
+  function saveDay() {
+    try { localStorage.setItem("h90-day-" + todayKey, JSON.stringify(day)); $("#store-status").textContent = ""; }
+    catch (e) { $("#store-status").textContent = "브라우저 저장 공간이 가득 찼습니다. 백업을 내려받은 뒤 오래된 기록을 지워주세요."; }
+  }
+  function saveProfile() { lsSet("h90-profile", profile); }
+  function loadHistory() {
+    const out = [];
+    try {
+      for (let i = 0; i < localStorage.length; i++) {
+        const k = localStorage.key(i);
+        if (k && k.startsWith("h90-day-")) { const d = JSON.parse(localStorage.getItem(k)); out.push({ date: d.date, weight: d.weight, waist: d.waist }); }
+      }
+    } catch {}
+    return out;
+  }
+  function initStore() {
+    const lp = lsGet("h90-profile", null); if (lp) profile = { ...profile, ...lp };
+    const ld = lsGet("h90-day-" + todayKey, null); if (ld) day = { ...day, ...ld };
+    history = loadHistory();
+    renderAll(); renderWorkout(); renderProfileForm();
+  }
+
+  // 백업 내보내기·가져오기 (기기 변경 대비)
+  $("#export").addEventListener("click", () => {
+    const dump = {};
+    try { for (let i = 0; i < localStorage.length; i++) { const k = localStorage.key(i); if (k && k.startsWith("h90-") && k !== "h90-apikey") dump[k] = localStorage.getItem(k); } } catch {}
+    const blob = new Blob([JSON.stringify(dump)], { type: "application/json" });
+    const a = document.createElement("a"); a.href = URL.createObjectURL(blob); a.download = `heori90-backup-${todayKey}.json`; a.click();
+    setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+  });
+  $("#import").addEventListener("change", async (e) => {
+    const f = e.target.files?.[0]; if (!f) return;
+    try {
+      const dump = JSON.parse(await f.text());
+      Object.entries(dump).forEach(([k, v]) => { if (k.startsWith("h90-") && k !== "h90-apikey") localStorage.setItem(k, v); });
+      $("#store-status").textContent = "백업을 불러왔습니다.";
+      day = { date: todayKey, meals: [], workout: {}, walks: {}, weight: null, waist: null };
+      initStore();
+    } catch { $("#store-status").textContent = "백업 파일을 읽지 못했습니다. 이 앱에서 내려받은 .json 파일인지 확인하세요."; }
+    e.target.value = "";
+  });
+
+  // ---------- tabs ----------
+  document.querySelectorAll(".tabs button").forEach(b => b.addEventListener("click", () => {
+    document.querySelectorAll(".tabs button").forEach(x => x.setAttribute("aria-selected", String(x === b)));
+    document.querySelectorAll("section.panel").forEach(p => p.hidden = p.id !== "panel-" + b.dataset.tab);
+    try { localStorage.setItem("h90-tab", b.dataset.tab); } catch {}
+  }));
+  (() => { let t = null; try { t = localStorage.getItem("h90-tab"); } catch {} const btn = t && document.querySelector(`.tabs button[data-tab="${t}"]`); if (btn) btn.click(); })();
+
+  // default slot by time of day
+  const h = now.getHours();
+  $("#slot").value = h < 10 ? "아침" : h < 15 ? "점심" : h < 21 ? "저녁" : "간식";
+
+  // ---------- body inputs ----------
+  $("#save-body").addEventListener("click", () => {
+    const w = parseFloat($("#in-weight").value), z = parseFloat($("#in-waist").value);
+    day.weight = isFinite(w) ? w : null; day.waist = isFinite(z) ? z : null;
+    saveDay(); renderChart();
+    const msg = day.waist ? (day.waist >= 90 ? `허리 ${day.waist}cm. 90cm까지 ${(day.waist - 89.5).toFixed(1)}cm 남았습니다.` : `허리 ${day.waist}cm. 복부비만 기준선 아래입니다.`) : "저장했습니다.";
+    $("#body-status").textContent = msg;
+  });
+  $("#save-profile").addEventListener("click", () => {
+    const a = +$("#p-age").value, ht = +$("#p-height").value, wt = +$("#p-weight").value;
+    if (a > 10 && ht > 100 && wt > 30) { profile = { age: a, height: ht, weight: wt }; saveProfile(); renderGauge(); renderProfileForm(); }
+  });
+
+  // ---------- photo analysis ----------
+  let file = null, ctl = null;
+  // 상용화 시: Firebase Functions 주소를 넣으면 API 키 없이 서버를 거쳐 분석합니다.
+  const PROXY_URL = "";
+  const DEFAULT_MODEL = "claude-sonnet-5-5";
+  const getKey = () => { try { return localStorage.getItem("h90-apikey") || ""; } catch { return ""; } };
+  const getModel = () => lsGet("h90-model", DEFAULT_MODEL);
+
+  async function toJpegBase64(f, maxSide = 1280) {
+    const bmp = await createImageBitmap(f);
+    const s = Math.min(1, maxSide / Math.max(bmp.width, bmp.height));
+    const c = document.createElement("canvas"); c.width = Math.round(bmp.width * s); c.height = Math.round(bmp.height * s);
+    c.getContext("2d").drawImage(bmp, 0, 0, c.width, c.height);
+    return c.toDataURL("image/jpeg", 0.85).split(",")[1];
+  }
+  function parseJson(text) {
+    try { return JSON.parse(text); } catch {}
+    const fence = text.match(/```(?:json)?\s*([\s\S]*?)```/); if (fence) { try { return JSON.parse(fence[1]); } catch {} }
+    const a = text.indexOf("{"), b = text.lastIndexOf("}");
+    if (a >= 0 && b > a) { try { return JSON.parse(text.slice(a, b + 1)); } catch {} }
+    throw { code: "invalid_json" };
+  }
+  async function analyzeMeal(prompt, f, signal) {
+    const image = f ? await toJpegBase64(f) : null;
+    let res;
+    if (PROXY_URL) {
+      res = await fetch(PROXY_URL, { method: "POST", signal, headers: { "content-type": "application/json" }, body: JSON.stringify({ prompt, image }) });
+      if (!res.ok) throw { code: res.status === 429 ? "rate_limited" : "upstream_error" };
+      return parseJson((await res.json()).text || "");
+    }
+    const key = getKey();
+    if (!key) throw { code: "no_key" };
+    const content = [];
+    if (image) content.push({ type: "image", source: { type: "base64", media_type: "image/jpeg", data: image } });
+    content.push({ type: "text", text: prompt });
+    res = await fetch("https://api.anthropic.com/v1/messages", {
+      method: "POST", signal,
+      headers: { "content-type": "application/json", "x-api-key": key, "anthropic-version": "2023-06-01", "anthropic-dangerous-direct-browser-access": "true" },
+      body: JSON.stringify({ model: getModel(), max_tokens: 1500, messages: [{ role: "user", content }] })
+    });
+    if (res.status === 401) throw { code: "bad_key" };
+    if (res.status === 429) throw { code: "rate_limited" };
+    if (!res.ok) throw { code: "upstream_error" };
+    const data = await res.json();
+    return parseJson((data.content || []).filter(c => c.type === "text").map(c => c.text).join(""));
+  }
+  $("#photo").addEventListener("change", (e) => {
+    file = e.target.files?.[0] || null;
+    const img = $("#preview");
+    if (file) { img.src = URL.createObjectURL(file); img.hidden = false; $("#drop-text").innerHTML = "<small class='muted'>다른 사진으로 바꾸려면 누르세요</small>"; $("#drop").classList.add("has"); }
+  });
+
+  async function makeThumb(f) {
+    try {
+      const bmp = await createImageBitmap(f);
+      const s = 120 / Math.max(bmp.width, bmp.height);
+      const c = document.createElement("canvas"); c.width = Math.round(bmp.width * s); c.height = Math.round(bmp.height * s);
+      c.getContext("2d").drawImage(bmp, 0, 0, c.width, c.height);
+      return c.toDataURL("image/jpeg", 0.6);
+    } catch { return null; }
+  }
+
+  function buildPrompt(slot, memo) {
+    const T = targets(), t = totals();
+    const eaten = day.meals.map(m => `${m.slot}: ${Math.round(m.total?.kcal || 0)}kcal, 단백질 ${Math.round(m.total?.protein || 0)}g`).join(" / ") || "아직 없음";
+    return `당신은 한국 중년 남성의 내장지방 감량을 돕는 영양 코치입니다.
+사용자: 남성 ${profile.age}세, ${profile.height}cm, ${profile.weight}kg. 팔다리는 가늘고 복부 내장지방이 많은 마른 비만형. 무릎 통증이 있음. 목표는 근육을 지키며 내장지방 감량.
+하루 목표: ${T.kcal}kcal, 단백질 ${T.protein}g, 탄수화물 ${T.carb}g, 지방 ${T.fat}g.
+오늘 이미 먹은 것: ${eaten} (합계 ${Math.round(t.kcal)}kcal, 단백질 ${Math.round(t.protein)}g).
+지금 분석할 식사: ${slot}. ${file ? "첨부 사진이 이 식사입니다. 사진 속 음식과 양을 한국 음식 기준으로 추정하세요. 메뉴판이나 식판 선택 전 사진이면, 무엇을 고르고 얼마나 남길지 권하세요." : "사진은 없고 아래 설명만으로 추정하세요."}
+사용자 메모: ${memo || "없음"}
+
+판정 기준: good = 그대로 먹어도 좋음, caution = 양 조절이나 일부 남기기 필요, stop = 이 식사는 피하는 게 좋음(분명한 이유가 있을 때만).
+조언은 짧고 구체적인 행동 지시로, 한국어 존댓말. "밥 ⅓ 남기세요"처럼 무엇을 얼마나 할지 말하세요.
+
+반드시 아래 형태의 JSON 하나만 답하세요:
+{"foods":[{"name":"음식명","amount":"추정량","kcal":0,"protein":0,"carb":0,"fat":0}],"total":{"kcal":0,"protein":0,"carb":0,"fat":0},"verdict":"good|caution|stop","headline":"한 줄 평가","advice":["행동 지시 1","행동 지시 2"],"skip":"먹지 말거나 남길 것 (없으면 빈 문자열)","next":"오늘 남은 식사에서 맞출 것"}`;
+  }
+
+  function renderResult(r, thumb) {
+    const box = $("#result"); box.replaceChildren(); box.hidden = false;
+    const v = VERDICT[r.verdict] || VERDICT.caution;
+    box.append(el("div", { class: "verdict" }, el("span", { class: "pill " + v[0], text: v[1] }), el("h3", { text: r.headline || "" })));
+    const tbl = el("table", {}, el("thead", {}, el("tr", {}, ...["음식","kcal","단백질","탄수","지방"].map(x => el("th", { text: x })))));
+    const tb = el("tbody");
+    (r.foods || []).forEach(f => tb.append(el("tr", {}, el("td", {}, el("span", { text: f.name }), f.amount ? el("small", { class: "muted", text: " " + f.amount }) : null),
+      el("td", { text: Math.round(+f.kcal || 0) }), el("td", { text: Math.round(+f.protein || 0) + "g" }), el("td", { text: Math.round(+f.carb || 0) + "g" }), el("td", { text: Math.round(+f.fat || 0) + "g" }))));
+    const T = r.total || {};
+    tb.append(el("tr", {}, el("td", {}, el("b", { text: "합계" })), el("td", {}, el("b", { text: Math.round(+T.kcal || 0) })), el("td", { text: Math.round(+T.protein || 0) + "g" }), el("td", { text: Math.round(+T.carb || 0) + "g" }), el("td", { text: Math.round(+T.fat || 0) + "g" })));
+    tbl.append(tb);
+    box.append(el("div", { class: "tbl" }, tbl));
+    if (r.skip) box.append(el("p", { class: "note", style: "background:var(--stop-bg)" }, el("b", { text: "남기거나 빼세요: " }), r.skip));
+    if (Array.isArray(r.advice) && r.advice.length) box.append(el("ol", { class: "rules" }, ...r.advice.map(a => el("li", { text: String(a) }))));
+    if (r.next) box.append(el("p", { class: "note" }, el("b", { text: "오늘 남은 식사: " }), r.next));
+    box.append(el("p", { class: "muted", style: "font-size:12px", text: "기록 탭에 저장했습니다. 사진 칼로리는 ±20~30% 오차가 있는 추정치입니다." }));
+  }
+
+  const ERR = {
+    no_key: "기록 탭 맨 아래 'AI 설정'에 Anthropic API 키를 먼저 넣어주세요.", bad_key: "API 키가 올바르지 않습니다. 기록 탭에서 다시 확인하세요.",
+    not_granted: "Claude 사용을 허용해야 분석할 수 있습니다.", sampling_disabled: "이 계정에서는 분석 기능을 쓸 수 없습니다.",
+    rate_limited: "요청이 많습니다. 잠시 후 다시 시도하세요.", image_rejected: "이 사진은 읽을 수 없습니다. JPG·PNG로 다시 올려주세요.",
+    images_unavailable: "이 화면에서는 사진을 보낼 수 없습니다. 먹은 음식을 글로 적어주세요.", invalid_json: "결과를 읽지 못했습니다. 다시 시도해주세요.",
+    refused: "이 내용은 분석할 수 없습니다. 다른 사진으로 시도하세요.", session_expired: "다시 로그인해주세요."
+  };
+
+  $("#analyze").addEventListener("click", async () => {
+    const memo = $("#memo").value.trim(), slot = $("#slot").value;
+    const errEl = $("#scan-err"); errEl.hidden = true;
+    if (!file && !memo) { errEl.textContent = "사진을 올리거나 먹은 음식을 적어주세요."; errEl.hidden = false; return; }
+    ctl = new AbortController();
+    $("#analyze").disabled = true; $("#stop").hidden = false;
+    $("#scan-status").textContent = "음식을 확인하는 중… (10~40초)";
+    try {
+      const r = await analyzeMeal(buildPrompt(slot, memo), file, ctl.signal);
+      if (!r || typeof r !== "object" || !r.total) throw { code: "invalid_json" };
+      const thumb = file ? await makeThumb(file) : null;
+      const meal = { id: "m" + Date.now(), slot, time: new Date().toTimeString().slice(0, 5), foods: (r.foods || []).slice(0, 12), total: r.total, verdict: r.verdict, headline: r.headline || "", advice: r.advice || [], skip: r.skip || "", next: r.next || "", thumb };
+      day.meals.push(meal); saveDay();
+      renderResult(r, thumb); renderAll();
+      $("#scan-status").textContent = "";
+      $("#memo").value = ""; file = null; $("#photo").value = ""; $("#preview").hidden = true; $("#drop").classList.remove("has");
+      $("#drop-text").innerHTML = "<b>음식 사진 선택</b><br><small class='muted'>식판, 메뉴판, 배달 음식 모두 가능</small>";
+    } catch (e) {
+      $("#scan-status").textContent = "";
+      if (e?.code !== "cancelled" && e?.name !== "AbortError") { errEl.textContent = ERR[e?.code] || "분석 중 문제가 생겼습니다. 다시 시도해주세요."; errEl.hidden = false; }
+    } finally {
+      $("#analyze").disabled = false; $("#stop").hidden = true;
+    }
+  });
+  $("#stop").addEventListener("click", () => ctl?.abort());
+
+  // ---------- AI 설정 ----------
+  function renderAiSettings() {
+    const k = getKey();
+    $("#ai-key").value = k ? "••••••••" + k.slice(-4) : "";
+    $("#ai-model").value = getModel();
+    $("#ai-status").textContent = PROXY_URL ? "서버 연결 모드: API 키가 필요 없습니다." : (k ? "키가 저장되어 있습니다. 이 기기 브라우저에만 보관됩니다." : "키를 넣으면 사진 분석이 켜집니다.");
+  }
+  $("#ai-save").addEventListener("click", () => {
+    const v = $("#ai-key").value.trim();
+    try {
+      if (v && !v.startsWith("••")) localStorage.setItem("h90-apikey", v);
+      lsSet("h90-model", $("#ai-model").value);
+    } catch {}
+    renderAiSettings();
+  });
+  $("#ai-clear").addEventListener("click", () => { try { localStorage.removeItem("h90-apikey"); } catch {} renderAiSettings(); });
+
+  // ---------- boot ----------
+  renderDinner();
+  initStore();
+  renderAiSettings();
+})();
+</script>
+</body>
+</html>
